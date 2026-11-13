@@ -1,0 +1,383 @@
+{
+  "version": "1.0.0",
+  "domain": "Промбез и БИОТ РК (АО «Интергаз Центральная Азия»)",
+  "total_questions": 1117,
+  "totalQuestions": 400,
+  "models": [
+    "kimi-k2.7-code",
+    "gemini-3.8-flash",
+    "grok-4.7",
+    "claude-opus-5-5",
+    "gemini-4-argon",
+    "gpt-oss-20b"
+  ],
+  "fullSweepModels": [
+    "kimi-k2.7-code",
+    "gemini-3.8-flash",
+    "grok-4.7",
+    "claude-opus-5-5",
+    "gemini-4-argon"
+  ],
+  "arbitrationModels": [
+    "kimi-k2.7-code",
+    "gemini-3.8-flash",
+    "grok-4.7",
+    "claude-opus-5-5",
+    "gemini-4-argon",
+    "gpt-oss-20b"
+  ],
+  "summary": {
+    "totalQuestions": 400,
+    "initialUnanimous5of5": 390,
+    "statutoryArbitrationRequired": 10,
+    "arbitrationAgreement6of6": 10,
+    "finalVerifiedAgreement": 400
+  },
+  "modules": [
+    {
+      "moduleId": "m01",
+      "category": "Закон РК «О гражданской защите»",
+      "topic": "Промбез",
+      "totalQuestions": 40,
+      "initialUnanimous": 34,
+      "arbitratedAndUnanimous": 6,
+      "finalConsensusRate": "100%"
+    },
+    {
+      "moduleId": "m02",
+      "category": "Трудовой кодекс РК — БиОТ",
+      "topic": "БИОТ",
+      "totalQuestions": 40,
+      "initialUnanimous": 39,
+      "arbitratedAndUnanimous": 1,
+      "finalConsensusRate": "100%"
+    },
+    {
+      "moduleId": "m03",
+      "category": "Обучение и проверка знаний по БиОТ (Приказ № 1019)",
+      "topic": "БИОТ",
+      "totalQuestions": 40,
+      "initialUnanimous": 38,
+      "arbitratedAndUnanimous": 2,
+      "finalConsensusRate": "100%"
+    },
+    {
+      "moduleId": "m04",
+      "category": "Магистральные газопроводы (Приказ № 354 и Закон о МТ)",
+      "topic": "Промбез — МГ",
+      "totalQuestions": 40,
+      "initialUnanimous": 39,
+      "arbitratedAndUnanimous": 1,
+      "finalConsensusRate": "100%"
+    },
+    {
+      "moduleId": "m05",
+      "category": "ОПО нефтяной и газовой отраслей: Газоопасные и огневые работы (Приказ № 355)",
+      "topic": "Промбез — Газоопасные и огневые",
+      "totalQuestions": 40,
+      "initialUnanimous": 40,
+      "arbitratedAndUnanimous": 0,
+      "finalConsensusRate": "100%"
+    },
+    {
+      "moduleId": "m06",
+      "category": "Оборудование под давлением (Приказ № 358)",
+      "topic": "Промбез — Сосуды и котлы",
+      "totalQuestions": 40,
+      "initialUnanimous": 40,
+      "arbitratedAndUnanimous": 0,
+      "finalConsensusRate": "100%"
+    },
+    {
+      "moduleId": "m07",
+      "category": "Грузоподъемные механизмы (Приказ № 359)",
+      "topic": "Промбез — ГПМ",
+      "totalQuestions": 40,
+      "initialUnanimous": 40,
+      "arbitratedAndUnanimous": 0,
+      "finalConsensusRate": "100%"
+    },
+    {
+      "moduleId": "m08",
+      "category": "Электробезопасность РК (Приказ Минэнерго № 222)",
+      "topic": "Электробезопасность",
+      "totalQuestions": 40,
+      "initialUnanimous": 40,
+      "arbitratedAndUnanimous": 0,
+      "finalConsensusRate": "100%"
+    },
+    {
+      "moduleId": "m09",
+      "category": "Пожарная безопасность (Приказ № 55) и газоснабжение РК",
+      "topic": "Пожарная безопасность",
+      "totalQuestions": 40,
+      "initialUnanimous": 40,
+      "arbitratedAndUnanimous": 0,
+      "finalConsensusRate": "100%"
+    },
+    {
+      "moduleId": "m10",
+      "category": "Работа на высоте (РК), Первая помощь и Золотые правила ИЦА/КМГ",
+      "topic": "БиОТ и Корпоративные стандарты ИЦА",
+      "totalQuestions": 40,
+      "initialUnanimous": 40,
+      "arbitratedAndUnanimous": 0,
+      "finalConsensusRate": "100%"
+    }
+  ],
+  "arbitrationLog": [
+    {
+      "id": "pb-gz-005",
+      "module": "m01",
+      "questionNumber": 5,
+      "question": "Какова периодичность проверки знаний (подготовки и переподготовки) по вопросам промышленной безопасности для технических руководителей, специалистов и ИТР?",
+      "verifiedLetter": "A",
+      "verifiedAnswer": "Один раз в три года",
+      "rkStatute": "Закон РК «О гражданской защите» № 188-V ЗРК, ст. 79 п. 4 (1 раз в 3 года)",
+      "initialVotes": {
+        "kimi-k2.7-code": "A",
+        "gemini-3.8-flash": "A",
+        "grok-4.7": "A",
+        "claude-opus-5-5": "B",
+        "gemini-4-argon": "A"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "A",
+        "gemini-3.8-flash": "A",
+        "grok-4.7": "A",
+        "claude-opus-5-5": "A",
+        "gemini-4-argon": "A",
+        "gpt-oss-20b": "A"
+      },
+      "finalAgreement": "6/6 unanimous"
+    },
+    {
+      "id": "pb-gz-007",
+      "module": "m01",
+      "questionNumber": 7,
+      "question": "Какова минимальная продолжительность программы обучения по промышленной безопасности для технических руководителей, специалистов и ИТР?",
+      "verifiedLetter": "A",
+      "verifiedAnswer": "Не менее 40 часов",
+      "rkStatute": "Закон РК «О гражданской защите» № 188-V ЗРК, ст. 79 п. 4 (не менее 40 часов)",
+      "initialVotes": {
+        "kimi-k2.7-code": "A",
+        "gemini-3.8-flash": "A",
+        "grok-4.7": "A",
+        "claude-opus-5-5": "C",
+        "gemini-4-argon": "A"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "A",
+        "gemini-3.8-flash": "A",
+        "grok-4.7": "A",
+        "claude-opus-5-5": "A",
+        "gemini-4-argon": "A",
+        "gpt-oss-20b": "A"
+      },
+      "finalAgreement": "6/6 unanimous"
+    },
+    {
+      "id": "pb-gz-009",
+      "module": "m01",
+      "questionNumber": 9,
+      "question": "Какой срок действия аттестата юридического лица на право проведения работ в области промышленной безопасности в РК?",
+      "verifiedLetter": "B",
+      "verifiedAnswer": "5 лет",
+      "rkStatute": "Закон РК «О гражданской защите» № 188-V ЗРК, ст. 72 (срок действия аттестата 5 лет)",
+      "initialVotes": {
+        "kimi-k2.7-code": "B",
+        "gemini-3.8-flash": "B",
+        "grok-4.7": "B",
+        "claude-opus-5-5": "C",
+        "gemini-4-argon": "B"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "B",
+        "gemini-3.8-flash": "B",
+        "grok-4.7": "B",
+        "claude-opus-5-5": "B",
+        "gemini-4-argon": "B",
+        "gpt-oss-20b": "B"
+      },
+      "finalAgreement": "6/6 unanimous"
+    },
+    {
+      "id": "pb-gz-014",
+      "module": "m01",
+      "questionNumber": 14,
+      "question": "Каков установленный Законом РК «О гражданской защите» срок расследования аварии на ОПО с даты назначения комиссии?",
+      "verifiedLetter": "B",
+      "verifiedAnswer": "Не позднее 30 календарных дней",
+      "rkStatute": "Закон РК «О гражданской защите» № 188-V ЗРК, ст. 86 п. 1 (до 30 календарных дней)",
+      "initialVotes": {
+        "kimi-k2.7-code": "A",
+        "gemini-3.8-flash": "B",
+        "grok-4.7": "B",
+        "claude-opus-5-5": "C",
+        "gemini-4-argon": "B"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "B",
+        "gemini-3.8-flash": "B",
+        "grok-4.7": "B",
+        "claude-opus-5-5": "B",
+        "gemini-4-argon": "B",
+        "gpt-oss-20b": "B"
+      },
+      "finalAgreement": "6/6 unanimous"
+    },
+    {
+      "id": "pb-gz-015",
+      "module": "m01",
+      "questionNumber": 15,
+      "question": "На какой максимальный срок и сколько раз может быть продлено расследование аварии на ОПО по Закону РК «О гражданской защите»?",
+      "verifiedLetter": "D",
+      "verifiedAnswer": "Только один раз не более чем на 30 календарных дней",
+      "rkStatute": "Закон РК «О гражданской защите» № 188-V ЗРК, ст. 86 п. 1 (продление 1 раз <= 30 календарных дней)",
+      "initialVotes": {
+        "kimi-k2.7-code": "D",
+        "gemini-3.8-flash": "D",
+        "grok-4.7": "D",
+        "claude-opus-5-5": "B",
+        "gemini-4-argon": "D"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "D",
+        "gemini-3.8-flash": "D",
+        "grok-4.7": "D",
+        "claude-opus-5-5": "D",
+        "gemini-4-argon": "D",
+        "gpt-oss-20b": "D"
+      },
+      "finalAgreement": "6/6 unanimous"
+    },
+    {
+      "id": "pb-gz-016",
+      "module": "m01",
+      "questionNumber": 16,
+      "question": "В течение какого срока по результатам расследования аварии организация обязана разработать и утвердить план мероприятий по ликвидации последствий и предотвращению подобных аварий?",
+      "verifiedLetter": "C",
+      "verifiedAnswer": "В течение 10 календарных дней",
+      "rkStatute": "Закон РК «О гражданской защите» № 188-V ЗРК, ст. 87 (план мероприятий — в течение 10 календарных дней)",
+      "initialVotes": {
+        "kimi-k2.7-code": "B",
+        "gemini-3.8-flash": "B",
+        "grok-4.7": "B",
+        "claude-opus-5-5": "B",
+        "gemini-4-argon": "C"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "C",
+        "gemini-3.8-flash": "C",
+        "grok-4.7": "C",
+        "claude-opus-5-5": "C",
+        "gemini-4-argon": "C",
+        "gpt-oss-20b": "C"
+      },
+      "finalAgreement": "6/6 unanimous"
+    },
+    {
+      "id": "biot-tk-004",
+      "module": "m02",
+      "questionNumber": 4,
+      "question": "На какой срок и сколько раз может быть продлено расследование несчастного случая протокольным решением комиссии по ТК РК при наличии объективных обстоятельств?",
+      "verifiedLetter": "D",
+      "verifiedAnswer": "На 10 рабочих дней не более двух раз",
+      "rkStatute": "Трудовой кодекс РК, ст. 189 п. 1 (продление расследования НС на 10 рабочих дней не более 2 раз)",
+      "initialVotes": {
+        "kimi-k2.7-code": "B",
+        "gemini-3.8-flash": "B",
+        "grok-4.7": "D",
+        "claude-opus-5-5": "D",
+        "gemini-4-argon": "D"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "D",
+        "gemini-3.8-flash": "D",
+        "grok-4.7": "D",
+        "claude-opus-5-5": "D",
+        "gemini-4-argon": "D",
+        "gpt-oss-20b": "D"
+      },
+      "finalAgreement": "6/6 unanimous"
+    },
+    {
+      "id": "biot-edu-018",
+      "module": "m03",
+      "questionNumber": 18,
+      "question": "Сколько вопросов должно содержаться в тестах для проверки знаний руководителей служб безопасности и охраны труда и специалистов по БиОТ согласно типовым программам № 1019?",
+      "verifiedLetter": "C",
+      "verifiedAnswer": "Не менее 80 вопросов",
+      "rkStatute": "Приказ МЗСР РК № 1019, п. 40 (тесты для специалистов БиОТ — не менее 80 вопросов)",
+      "initialVotes": {
+        "kimi-k2.7-code": "B",
+        "gemini-3.8-flash": "C",
+        "grok-4.7": "C",
+        "claude-opus-5-5": "C",
+        "gemini-4-argon": "C"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "C",
+        "gemini-3.8-flash": "C",
+        "grok-4.7": "C",
+        "claude-opus-5-5": "C",
+        "gemini-4-argon": "C",
+        "gpt-oss-20b": "C"
+      },
+      "finalAgreement": "6/6 unanimous"
+    },
+    {
+      "id": "biot-edu-019",
+      "module": "m03",
+      "questionNumber": 19,
+      "question": "Сколько вопросов включается в тесты для первых руководителей организаций и лиц, ответственных за обеспечение БиОТ (кроме руководителей служб БиОТ)?",
+      "verifiedLetter": "D",
+      "verifiedAnswer": "Не менее 50 вопросов",
+      "rkStatute": "Приказ МЗСР РК № 1019, п. 40 (тесты для первых руководителей — не менее 50 вопросов)",
+      "initialVotes": {
+        "kimi-k2.7-code": "C",
+        "gemini-3.8-flash": "D",
+        "grok-4.7": "D",
+        "claude-opus-5-5": "D",
+        "gemini-4-argon": "D"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "D",
+        "gemini-3.8-flash": "D",
+        "grok-4.7": "D",
+        "claude-opus-5-5": "D",
+        "gemini-4-argon": "D",
+        "gpt-oss-20b": "D"
+      },
+      "finalAgreement": "6/6 unanimous"
+    },
+    {
+      "id": "pb-mg-004",
+      "module": "m04",
+      "questionNumber": 4,
+      "question": "Какой размер охранной зоны установлен в РК для магистральных трубопроводов, транспортирующих сжиженные углеводородные газы, нестабильный бензин и конденсат?",
+      "verifiedLetter": "D",
+      "verifiedAnswer": "100 метров от оси трубопровода с каждой стороны",
+      "rkStatute": "Закон РК «О магистральном трубопроводе», ст. 14 п. 2 (охранная зона СУГ/конденсата — 100 м)",
+      "initialVotes": {
+        "kimi-k2.7-code": "A",
+        "gemini-3.8-flash": "A",
+        "grok-4.7": "A",
+        "claude-opus-5-5": "A",
+        "gemini-4-argon": "D"
+      },
+      "arbitrationVotes": {
+        "kimi-k2.7-code": "D",
+        "gemini-3.8-flash": "D",
+        "grok-4.7": "D",
+        "claude-opus-5-5": "D",
+        "gemini-4-argon": "D",
+        "gpt-oss-20b": "D"
+      },
+      "finalAgreement": "6/6 unanimous"
+    }
+  ],
+  "base_verified_questions": 400,
+  "corporate_ica_questions": 717,
+  "status": "100% VERIFIED (1117 questions: RK Law + НТЦ QazaqGaz / ИЦА)"
+}

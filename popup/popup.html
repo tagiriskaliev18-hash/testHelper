@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0">
+  <title>Промбез & БИОТ РК — Помощник ИЦА</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1 class="brand-title">Промбез & БИОТ РК</h1>
+        <p class="brand-subtitle">Помощник АО «Интергаз Центральная Азия»</p>
+      </div>
+    </div>
+    <div class="consensus-badge" title="Вся база из 400 вопросов проверена моделями: Kimi K2.7, Gemini 3.8, Grok 4.7, Claude Opus 5.5, Gemini 4 и арбитражем GPT-OSS-20B по НПА РК">
+      <span class="badge-dot"></span>
+      <span class="badge-text">База верифицирована</span>
+    </div>
+  </header>
+
+  <!-- Main Hero Action -->
+  <section class="hero-section">
+    <button id="toggleRecognitionBtn" class="main-toggle-btn" type="button" aria-pressed="false">
+      <div class="toggle-btn-content">
+        <span class="toggle-status-dot" id="toggleStatusDot"></span>
+        <span class="toggle-btn-label" id="toggleBtnLabel">Включить распознавание</span>
+      </div>
+      <span class="status-pill off" id="recognitionStatusPill">Выкл</span>
+    </button>
+
+    <div class="hero-actions-row">
+      <div class="shortcut-hint" title="Быстрое включение/отключение">
+        <span class="kbd">Alt</span> + <span class="kbd">Shift</span> + <span class="kbd">T</span>
+      </div>
+      <button id="liveAiQuickBtn" class="secondary-btn live-ai-btn active" type="button" title="Авто-ИИ для вопросов вне локальной базы (нажмите для настройки/переключения)">
+        <span>Live-ИИ: Вкл</span>
+      </button>
+      <button id="rescanBtn" class="secondary-btn" type="button" title="Принудительно пересканировать активную вкладку">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+        <span>Пересканировать</span>
+      </button>
+    </div>
+
+    <!-- Marker Subtlety Selector -->
+    <div class="marker-control">
+      <div class="marker-label">Степень заметности метки:</div>
+      <div class="marker-pills" id="markerPills" role="radiogroup">
+        <button type="button" class="marker-pill" data-style="ultra" role="radio" aria-checked="false" title="Микро-точка 4px + едва видимая левая риска">
+          Ультра-тихий
+        </button>
+        <button type="button" class="marker-pill active" data-style="subtle" role="radio" aria-checked="true" title="Деликатный полупрозрачный оттенок (по умолчанию)">
+          Еле заметный
+        </button>
+        <button type="button" class="marker-pill" data-style="clear" role="radio" aria-checked="false" title="Уверенная контрастная подсветка для подготовки">
+          Чёткий
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs" role="tablist">
+    <button id="tabMonitorBtn" class="tab-btn active" role="tab" aria-selected="true" data-tab="tab-monitor">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+      <span>Монитор</span>
+    </button>
+    <button id="tabDbBtn" class="tab-btn" role="tab" aria-selected="false" data-tab="tab-db">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      <span>База тестов</span>
+    </button>
+    <button id="tabSettingsBtn" class="tab-btn" role="tab" aria-selected="false" data-tab="tab-settings">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span>Настройки</span>
+    </button>
+  </nav>
+
+  <!-- Tab Content Area -->
+  <main class="tabs-container">
+    <!-- TAB 1: МОНИТОР -->
+    <section id="tab-monitor" class="tab-pane active" role="tabpanel">
+      <div class="active-tab-card">
+        <div class="active-tab-header">
+          <span class="active-tab-indicator" id="pageScanIndicator"></span>
+          <span class="active-tab-title" id="monitorTabTitle">Сканирование активной страницы...</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-box">
+            <span class="metric-value" id="foundQuestionsCount">0</span>
+            <span class="metric-name">Вопросов найдено</span>
+          </div>
+          <div class="metric-box highlight">
+            <span class="metric-value" id="highlightedAnswersCount">0</span>
+            <span class="metric-name">Ответов подсвечено</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title-row">
+        <h3 class="pane-subheading">Распознанные вопросы на странице</h3>
+        <span class="badge-count" id="monitorItemsBadge">0</span>
+      </div>
+
+      <div id="detectedQuestionsList" class="detected-list">
+        <div class="empty-state" id="monitorEmptyState">
+          <div class="empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <p class="empty-title">Вопросы на странице не обнаружены</p>
+          <p class="empty-desc">
+            Включите распознавание один раз — расширение будет автоматически считывать вопросы
+            и подсвечивать ответы на всех открытых и новых страницах тестирования.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: БАЗА ТЕСТОВ -->
+    <section id="tab-db" class="tab-pane" role="tabpanel">
+      <!-- Verification summary banner -->
+      <div class="verification-summary-banner" id="verificationSummaryBanner">
+        <div class="summary-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="summary-text">
+          <strong id="dbTotalQuestionsCount">400 вопросов верифицировано</strong>
+          <span>Консилиум 5–6 моделей (Kimi, Gemini 3.8, Grok, Claude, Gemini 4, GPT-OSS) по НПА РК</span>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="db-controls">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="dbSearchInput" placeholder="Поиск по вопросу, ответу или НПА..." autocomplete="off">
+          <button type="button" id="dbClearSearchBtn" class="clear-btn" title="Очистить поиск" style="display:none;">&times;</button>
+        </div>
+
+        <select id="dbCategorySelect" class="category-select">
+          <option value="all">Все категории тестов</option>
+          <option value="prombez">Промбез (Закон № 188-V)</option>
+          <option value="biot">БиОТ (Трудовой кодекс РК)</option>
+          <option value="mg">Магистральные газопроводы</option>
+          <option value="gas_fire">Газоопасные и огневые работы</option>
+          <option value="pressure">Сосуды под давлением</option>
+          <option value="gpm">Грузоподъемные механизмы (ГПМ)</option>
+          <option value="electro">Электробезопасность</option>
+          <option value="fire">Пожарная безопасность</option>
+          <option value="height">Высота и СИЗ</option>
+          <option value="med">Первая медицинская помощь</option>
+          <option value="ica">Золотые правила ИЦА</option>
+        </select>
+      </div>
+
+      <!-- Results info -->
+      <div class="db-stats-row">
+        <span class="db-stats-text" id="dbResultsStats">Загрузка базы...</span>
+      </div>
+
+      <!-- Question Cards List -->
+      <div id="dbResultsList" class="db-cards-list">
+        <!-- Rendered dynamically by popup.js -->
+      </div>
+    </section>
+
+    <!-- TAB 3: НАСТРОЙКИ -->
+    <section id="tab-settings" class="tab-pane" role="tabpanel">
+      <form id="settingsForm" class="settings-form">
+        <!-- Live AI Toggle -->
+        <div class="setting-toggle-card">
+          <div class="toggle-text-block">
+            <label for="liveAiEnabled" class="setting-title">Постоянный Live-ИИ (Авто)</label>
+            <p class="setting-desc">Автоматически решает любые вопросы вне локальной базы через мост, Ollama и облачный ИИ без ключа</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="liveAiEnabled" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Dynamic auto scan toggle -->
+        <div class="setting-toggle-card">
+          <div class="toggle-text-block">
+            <label for="autoScanDynamic" class="setting-title">Автоматический трекинг SPA</label>
+            <p class="setting-desc">Мгновенно подсвечивать вопросы при переключении страниц теста через MutationObserver</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="autoScanDynamic" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- AI Engine Selector -->
+        <div class="form-group">
+          <label for="aiModeSelect" class="form-label">Источник Live-ответов:</label>
+          <select id="aiModeSelect" class="form-select">
+            <option value="auto">Авто: Мост + Ollama + Встроенный ИИ (рекомендуется)</option>
+            <option value="pollinations">Встроенный облачный ИИ (Pollinations, без ключа)</option>
+            <option value="bridge">Только локальный мост (127.0.0.1:8765)</option>
+            <option value="openai">OpenAI-совместимый API (свой ключ)</option>
+            <option value="gemini">Google Gemini API (свой ключ)</option>
+          </select>
+        </div>
+
+        <!-- Dynamic field: Bridge URL -->
+        <div class="form-group" id="bridgeUrlGroup">
+          <label for="bridgeUrlInput" class="form-label">Адрес локального моста:</label>
+          <input type="text" id="bridgeUrlInput" class="form-input" placeholder="http://127.0.0.1:8765">
+          <span class="input-hint">Запускается файлом <code>bridge/Start-Bridge.bat</code></span>
+        </div>
+
+        <!-- Dynamic fields: API settings -->
+        <div id="apiFieldsGroup" style="display: none;">
+          <div class="form-group">
+            <label for="apiEndpointInput" class="form-label">API Endpoint:</label>
+            <input type="text" id="apiEndpointInput" class="form-input" placeholder="https://api.openai.com/v1/chat/completions">
+          </div>
+          <div class="form-group">
+            <label for="apiModelInput" class="form-label">Модель:</label>
+            <input type="text" id="apiModelInput" class="form-input" placeholder="gpt-4o-mini">
+          </div>
+          <div class="form-group">
+            <label for="apiKeyInput" class="form-label">API Ключ:</label>
+            <div class="password-wrapper">
+              <input type="password" id="apiKeyInput" class="form-input" placeholder="sk-...">
+              <button type="button" id="toggleKeyVisibilityBtn" class="toggle-key-btn" title="Показать/скрыть ключ">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connection Test & Status Alert -->
+        <div id="settingsStatus" class="status-alert" style="display: none;"></div>
+
+        <!-- Action Buttons -->
+        <div class="settings-actions">
+          <button type="button" id="testConnectionBtn" class="btn btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+            <span>Проверить связь</span>
+          </button>
+          <button type="button" id="saveSettingsBtn" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            <span>Сохранить</span>
+          </button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-left">
+      <span class="footer-dot"></span>
+      <span class="footer-text">QazaqGaz & ICA Standards</span>
+    </div>
+    <div class="footer-right">v1.0.2 (Авто-монитор • Live-ИИ)</div>
+  </footer>
+
+  <script src="popup.js" defer></script>
+</body>
+</html>

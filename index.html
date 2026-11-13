@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Mind TestHelper Live — Hands-Free AI Scanner</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2309090f'/><path d='M30 70 L30 30 L50 50 L70 30 L70 70' stroke='%2300F5FF' stroke-width='10' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
+  <meta name="theme-color" content="#09090f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+  <div class="app-viewport">
+    <!-- Camera Viewport & Stream -->
+    <div class="camera-container" id="cameraContainer">
+      <video id="videoFeed" playsinline autoplay muted></video>
+      <canvas id="motionCanvas" class="hidden-canvas"></canvas>
+      <canvas id="captureCanvas" class="hidden-canvas"></canvas>
+      <div class="camera-backdrop-fallback" id="cameraFallback">
+        <div class="fallback-spinner"></div>
+        <p id="fallbackText">Подключение камеры...</p>
+        <button id="btnAllowCamera" class="mind-btn mind-btn-cyan">Разрешить доступ</button>
+        <button id="btnTryDemo" class="mind-btn mind-btn-glass">Запустить тест-вопрос</button>
+      </div>
+    </div>
+
+    <!-- HUD Overlay Layers -->
+    <div class="hud-overlay" id="hudOverlay">
+      <!-- Top Glass Navigation Bar -->
+      <header class="hud-header glass-panel">
+        <div class="brand-badge">
+          <div class="badge-m-ring">
+            <span class="badge-m">M</span>
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">MIND</span>
+            <span class="brand-sub">TESTHELPER</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Status Indicator -->
+        <div class="status-pill" id="statusPill">
+          <span class="status-dot"></span>
+          <span class="status-label" id="statusLabel">ПОИСК ВОПРОСА</span>
+        </div>
+
+        <!-- Quick Controls -->
+        <div class="header-controls">
+          <button id="btnSettings" class="hud-icon-btn" title="Настройки бэкенда" aria-label="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+          <button id="btnTorch" class="hud-icon-btn" title="Фонарик" aria-label="Torch">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          </button>
+          <button id="btnFlipCamera" class="hud-icon-btn" title="Сменить камеру" aria-label="Flip Camera">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8c0 3.185 1.868 5.933 4.568 7.228L6 20h6v-6l-2.482 2.482C7.364 15.445 6 12.923 6 10c0-3.314 2.686-6 6-6s6 2.686 6 6c0 1.954-.937 3.69-2.388 4.793l1.42 1.42C18.666 14.707 20 12.518 20 10z"/>
+            </svg>
+          </button>
+          <button id="btnMuteTTS" class="hud-icon-btn active" title="Озвучка ответа" aria-label="Audio Speech">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="iconAudio">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Center Targeting Frame with Scanning Laser -->
+      <main class="hud-reticle-area" id="reticleArea">
+        <div class="target-frame" id="targetFrame">
+          <!-- 4 Corner Brackets -->
+          <div class="corner-bracket corner-tl"></div>
+          <div class="corner-bracket corner-tr"></div>
+          <div class="corner-bracket corner-bl"></div>
+          <div class="corner-bracket corner-br"></div>
+
+          <!-- Animated Laser Beam -->
+          <div class="laser-beam" id="laserBeam"></div>
+
+          <!-- Center Crosshairs / Guide -->
+          <div class="frame-guide">
+            <span class="guide-tag">НАВЕДИТЕ НА ВОПРОС</span>
+            <div class="stillness-meter">
+              <div class="stillness-bar" id="stillnessBar"></div>
+            </div>
+            <span class="stability-tag" id="stabilityTag">ДЕРЖИТЕ НЕПОДВИЖНО</span>
+          </div>
+        </div>
+
+        <!-- Floating manual shutter button -->
+        <button id="btnManualSnap" class="shutter-btn" title="Сканировать сейчас">
+          <div class="shutter-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M3 9V5a2 2 0 0 1 2-2h4M21 9V5a2 2 0 0 0-2-2h-4M3 15v4a2 2 0 0 0 2 2h4M21 15v4a2 2 0 0 1-2 2h-4"/>
+            </svg>
+          </div>
+        </button>
+
+        <button id="btnSamplePicker" class="hud-pill-btn" title="Тестовые билеты">
+          <span>⚡ Примеры вопросов</span>
+        </button>
+      </main>
+
+      <!-- Bottom Answer Drawer (Mind Glass Card) -->
+      <aside class="answer-drawer glass-panel" id="answerDrawer">
+        <!-- Drawer Drag Handle -->
+        <div class="drawer-handle" id="drawerHandle">
+          <div class="handle-bar"></div>
+        </div>
+
+        <!-- Initial Idle State -->
+        <div class="drawer-state-idle" id="drawerIdle">
+          <div class="idle-icon-wrap">
+            <div class="pulse-ring"></div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#00F5FF" stroke-width="2">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <div class="idle-text">
+            <span class="idle-title">Автоматический режим включён</span>
+            <span class="idle-desc">Камера зафиксирует вопрос при паузе и покажет правильный ответ</span>
+          </div>
+        </div>
+
+        <!-- Active Answer Solved State -->
+        <div class="drawer-state-solved hidden" id="drawerSolved">
+          <div class="solved-header">
+            <div class="badge-source" id="badgeSource">
+              <span class="source-dot"></span>
+              <span id="sourceLabel">Gemini 3.1 Vision</span>
+            </div>
+            <div class="badge-confidence" id="badgeConfidence">
+              <span id="confidenceLabel">100% точность</span>
+            </div>
+            <div class="latency-pill" id="latencyPill">840ms</div>
+          </div>
+
+          <!-- Prominent Answer Highlight -->
+          <div class="highlight-answer-card">
+            <div class="card-eyebrow">ПРАВИЛЬНЫЙ ОТВЕТ:</div>
+            <div class="answer-text-banner" id="correctAnswerText">—</div>
+          </div>
+
+          <!-- Question Context -->
+          <div class="question-quote-block">
+            <div class="quote-label">ВОПРОС:</div>
+            <div class="quote-text" id="questionText">—</div>
+          </div>
+
+          <!-- All Options List -->
+          <div class="options-container" id="optionsList"></div>
+
+          <!-- Legal / Scientific Explanation -->
+          <div class="explanation-box" id="explanationBox">
+            <div class="explanation-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <span>Обоснование / НПА:</span>
+            </div>
+            <div class="explanation-content" id="explanationText">—</div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="drawer-actions">
+            <button id="btnCopyAnswer" class="action-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Скопировать</span>
+            </button>
+            <button id="btnSpeakNow" class="action-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+              <span>Озвучить</span>
+            </button>
+            <button id="btnDismiss" class="action-btn action-btn-dim">
+              <span>Сброс</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Backend Settings Modal -->
+    <div class="modal-backdrop hidden" id="settingsModal">
+      <div class="modal-sheet glass-panel">
+        <div class="modal-header">
+          <h3>Настройки бэкенда (API)</h3>
+          <button id="btnCloseSettings" class="hud-icon-btn">✕</button>
+        </div>
+        <p class="modal-sub">Адрес сервера-прокси для обработки запросов с камеры:</p>
+        <div class="settings-field">
+          <label class="field-label" for="inputBackendUrl">URL бэкенда (HTTPS):</label>
+          <input type="url" id="inputBackendUrl" class="mind-input" placeholder="https://your-api.onrender.com">
+        </div>
+        <div class="settings-presets">
+          <button id="btnSetCloudflare" class="preset-btn">🌐 Cloudflare Tunnel</button>
+          <button id="btnSetLocal" class="preset-btn">💻 Localhost (8000)</button>
+        </div>
+        <div class="settings-status" id="settingsStatus">
+          <span class="status-dot"></span>
+          <span id="settingsStatusText">Проверка соединения...</span>
+        </div>
+        <button id="btnSaveBackend" class="mind-btn mind-btn-cyan">Сохранить и проверить</button>
+      </div>
+    </div>
+
+    <!-- Sample Questions Modal (For Testing without Paper) -->
+    <div class="modal-backdrop hidden" id="sampleModal">
+      <div class="modal-sheet glass-panel">
+        <div class="modal-header">
+          <h3>Тестовые билеты для проверки</h3>
+          <button id="btnCloseModal" class="hud-icon-btn">✕</button>
+        </div>
+        <p class="modal-sub">Выберите билет — изображение будет отправлено в распознаватель:</p>
+        <div class="sample-grid" id="sampleGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

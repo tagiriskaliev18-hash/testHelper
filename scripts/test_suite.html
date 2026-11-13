@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тестовый симулятор — Промбез & БИОТ РК (АО «Интергаз Центральная Азия»)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #0ea5e9;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    header.sim-header {
+      background: linear-gradient(135deg, #0c4a6e 0%, #1e293b 100%);
+      border: 1px solid #0284c7;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .sim-badge {
+      display: inline-block;
+      background: #0284c7;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .sim-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .sim-desc { font-size: 13px; color: #cbd5e1; }
+
+    .engine-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .engine-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .engine-title { font-size: 15px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+    .engine-tag { font-size: 10.5px; background: #0f172a; padding: 3px 8px; border-radius: 4px; color: var(--text-muted); border: 1px solid var(--border); }
+
+    /* 1. Moodle Style Classes */
+    .que {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .que .info { font-size: 11px; color: #64748b; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
+    .que .content .formulation .qtext { font-size: 14px; font-weight: 600; color: #f1f5f9; margin-bottom: 12px; }
+    .que .ablock .answer { display: flex; flex-direction: column; gap: 8px; }
+    .que .ablock .answer div {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: #1e293b;
+      cursor: pointer;
+    }
+    .que .ablock .answer input[type="radio"] { margin-top: 3px; cursor: pointer; }
+    .que .ablock .answer label { font-size: 13px; cursor: pointer; color: #e2e8f0; flex: 1; }
+
+    /* 2. iSpring Style Classes */
+    .ispring-quiz-container { display: flex; flex-direction: column; gap: 16px; }
+    .ispring-question-card {
+      background: #182234;
+      border: 1px solid #2b3952;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .ispring-question-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #fff; }
+    .ispring-choice-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .ispring-choice-item:hover { border-color: #0284c7; }
+    .ispring-choice-text { font-size: 13px; color: #e2e8f0; }
+
+    /* 3. Standard Form Classes */
+    .test-form { display: flex; flex-direction: column; gap: 16px; }
+    .form-question-block {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .form-label-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #fff; }
+    .form-options-group { display: flex; flex-direction: column; gap: 8px; }
+    .custom-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: #1e293b;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* 4. Dynamic SPA Classes */
+    .spa-card {
+      background: #0b1120;
+      border: 1px solid #0284c7;
+      border-radius: 8px;
+      padding: 18px;
+      min-height: 180px;
+    }
+    .spa-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .spa-btn {
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .spa-btn:disabled { background: #334155; cursor: not-allowed; }
+    .spa-counter { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="sim-header">
+      <span class="sim-badge">Тестовый полигон</span>
+      <h1 class="sim-title">Симулятор систем тестирования (Moodle, iSpring, SPA, Forms)</h1>
+      <p class="sim-desc">
+        Аттестация по промышленной безопасности и охране труда РК для АО «Интергаз Центральная Азия».
+        Используйте этот стенд для проверки автоматического распознавания и деликатной подсветки.
+      </p>
+    </header>
+
+    <!-- SECTION 1: Moodle Style -->
+    <section class="engine-section">
+      <div class="engine-header">
+        <h2 class="engine-title">1. Moodle LMS (.que, .formulation, .answer)</h2>
+        <span class="engine-tag">Классическая разметка Moodle</span>
+      </div>
+
+      <!-- Question 1 -->
+      <div class="que multichoice" id="q1">
+        <div class="info">Вопрос 1 • Не отвечено</div>
+        <div class="content">
+          <div class="formulation">
+            <div class="qtext">
+              Что признается «аварией» в соответствии с Законом РК «О гражданской защите» № 188-V?
+            </div>
+            <div class="ablock">
+              <div class="answer">
+                <div class="r0">
+                  <input type="radio" name="moodle_q1" id="m_q1_a1">
+                  <label for="m_q1_a1">Кратковременный сбой в электроснабжении без остановки насосной станции</label>
+                </div>
+                <div class="r1">
+                  <input type="radio" name="moodle_q1" id="m_q1_a2">
+                  <label for="m_q1_a2">Разрушение зданий, сооружений и (или) технических устройств, применяемых на опасном производственном объекте, неконтролируемые взрыв и (или) выброс опасных веществ</label>
+                </div>
+                <div class="r0">
+                  <input type="radio" name="moodle_q1" id="m_q1_a3">
+                  <label for="m_q1_a3">Отказ или повреждение технического устройства без разрушения конструкций объекта</label>
+                </div>
+                <div class="r1">
+                  <input type="radio" name="moodle_q1" id="m_q1_a4">
+                  <label for="m_q1_a4">Любое нарушение трудовой дисциплины работником в течение рабочей смены</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question 2 -->
+      <div class="que multichoice" id="q2">
+        <div class="info">Вопрос 2 • Не отвечено</div>
+        <div class="content">
+          <div class="formulation">
+            <div class="qtext">
+              Какова ширина охранной зоны магистрального газопровода согласно Правилам обеспечения промышленной безопасности при эксплуатации магистральных трубопроводов РК?
+            </div>
+            <div class="ablock">
+              <div class="answer">
+                <div class="r0">
+                  <input type="radio" name="moodle_q2" id="m_q2_a1">
+                  <label for="m_q2_a1">10 метров от оси трубопровода</label>
+                </div>
+                <div class="r1">
+                  <input type="radio" name="moodle_q2" id="m_q2_a2">
+                  <label for="m_q2_a2">50 метров от оси трубопровода с каждой стороны (25 метров для отводов)</label>
+                </div>
+                <div class="r0">
+                  <input type="radio" name="moodle_q2" id="m_q2_a3">
+                  <label for="m_q2_a3">100 метров от границы землепользования</label>
+                </div>
+                <div class="r1">
+                  <input type="radio" name="moodle_q2" id="m_q2_a4">
+                  <label for="m_q2_a4">Охранная зона устанавливается только в черте населенных пунктов</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: iSpring / Corporate LMS Style -->
+    <section class="engine-section">
+      <div class="engine-header">
+        <h2 class="engine-title">2. iSpring Quiz Engine (.ispring-question-card)</h2>
+        <span class="engine-tag">Корпоративный LMS-формат</span>
+      </div>
+
+      <div class="ispring-quiz-container">
+        <!-- Question 3 -->
+        <div class="ispring-question-card">
+          <div class="ispring-question-title">
+            Вопрос 3. В какой срок комиссия обязана провести расследование несчастного случая на производстве по Трудовому кодексу Республики Казахстан?
+          </div>
+          <div class="ispring-choice-item">
+            <input type="radio" name="ispring_q1" id="is_q1_a1">
+            <label class="ispring-choice-text" for="is_q1_a1">В течение 3 календарных дней</label>
+          </div>
+          <div class="ispring-choice-item">
+            <input type="radio" name="ispring_q1" id="is_q1_a2">
+            <label class="ispring-choice-text" for="is_q1_a2">В течение 10 рабочих дней со дня создания комиссии</label>
+          </div>
+          <div class="ispring-choice-item">
+            <input type="radio" name="ispring_q1" id="is_q1_a3">
+            <label class="ispring-choice-text" for="is_q1_a3">В течение 30 календарных дней</label>
+          </div>
+          <div class="ispring-choice-item">
+            <input type="radio" name="ispring_q1" id="is_q1_a4">
+            <label class="ispring-choice-text" for="is_q1_a4">Срок определяется исключительно работодателем</label>
+          </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="ispring-question-card">
+          <div class="ispring-question-title">
+            Вопрос 4. Какой класс точности должны иметь манометры, устанавливаемые на сосудах, работающих под давлением (при давлении до 2,5 МПа и свыше 2,5 МПа)?
+          </div>
+          <div class="ispring-choice-item">
+            <input type="radio" name="ispring_q2" id="is_q2_a1">
+            <label class="ispring-choice-text" for="is_q2_a1">Не ниже 4,0 при любом давлении</label>
+          </div>
+          <div class="ispring-choice-item">
+            <input type="radio" name="ispring_q2" id="is_q2_a2">
+            <label class="ispring-choice-text" for="is_q2_a2">Не ниже 2,5 при рабочем давлении до 2,5 МПа и не ниже 1,5 при давлении свыше 2,5 МПа</label>
+          </div>
+          <div class="ispring-choice-item">
+            <input type="radio" name="ispring_q2" id="is_q2_a3">
+            <label class="ispring-choice-text" for="is_q2_a3">Класс точности не регламентируется при наличии предохранительного клапана</label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: Standard Forms & Multi-Checkbox -->
+    <section class="engine-section">
+      <div class="engine-header">
+        <h2 class="engine-title">3. Стандартная веб-форма (Forms & Checkboxes)</h2>
+        <span class="engine-tag">Формы аттестации</span>
+      </div>
+
+      <div class="test-form">
+        <!-- Question 5 -->
+        <div class="form-question-block">
+          <div class="form-label-title">
+            Вопрос 5. С какой высоты работы относятся к «работам на высоте» согласно нормам безопасности РК?
+          </div>
+          <div class="form-options-group">
+            <label class="custom-control">
+              <input type="radio" name="form_q5">
+              <span>С высоты 0,5 м от уровня земли</span>
+            </label>
+            <label class="custom-control">
+              <input type="radio" name="form_q5">
+              <span>С высоты 1,3 м и более при отсутствии ограждений высотой не менее 1,1 м</span>
+            </label>
+            <label class="custom-control">
+              <input type="radio" name="form_q5">
+              <span>Только при работах свыше 5 метров (верхолазные)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Question 6 -->
+        <div class="form-question-block">
+          <div class="form-label-title">
+            Вопрос 6. Каково правильное соотношение компрессий грудной клетки и вдохов искусственного дыхания при базовой СЛР взрослому человеку?
+          </div>
+          <div class="form-options-group">
+            <label class="custom-control">
+              <input type="radio" name="form_q6">
+              <span>15 компрессий к 2 вдохам</span>
+            </label>
+            <label class="custom-control">
+              <input type="radio" name="form_q6">
+              <span>30 компрессий к 2 вдохам</span>
+            </label>
+            <label class="custom-control">
+              <input type="radio" name="form_q6">
+              <span>5 компрессий к 1 вдоху</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: Dynamic SPA Switcher -->
+    <section class="engine-section">
+      <div class="engine-header">
+        <h2 class="engine-title">4. Динамический SPA-модуль (Тест MutationObserver)</h2>
+        <span class="engine-tag">SPA Dynamic Switcher</span>
+      </div>
+
+      <div class="spa-card">
+        <div id="spaQuestionContainer">
+          <!-- Populated dynamically via JS to test DOM mutations -->
+        </div>
+
+        <div class="spa-nav-bar">
+          <button id="prevSpaBtn" class="spa-btn" disabled>&larr; Предыдущий</button>
+          <span id="spaCounter" class="spa-counter">Вопрос 1 из 4</span>
+          <button id="nextSpaBtn" class="spa-btn">Следующий вопрос &rarr;</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Dynamic SPA Questions Data
+    const SPA_QUESTIONS = [
+      {
+        question: "В каком минимальном составе бригады разрешается выполнение газоопасных работ на объектах магистрального газопровода?",
+        options: [
+          "Один опытный работник с газоанализатором",
+          "Бригадой в составе не менее двух человек, а в емкостях — не менее трех человек",
+          "Только в присутствии главного инженера филиала",
+          "Состав бригады правилами не ограничен"
+        ]
+      },
+      {
+        question: "Что является одним из фундаментальных «Золотых правил безопасности» АО «Интергаз Центральная Азия»?",
+        options: [
+          "Отказ от небезопасного выполнения работ и право на остановку опасных действий",
+          "Выполнение производственного плана любой ценой",
+          "Проведение работ повышенной опасности без оформления наряда-допуска при нехватке времени",
+          "Отключение приборов безопасности при ложных срабатываниях"
+        ]
+      },
+      {
+        question: "С какой периодичностью руководящие работники и специалисты (ИТР) опасных производственных объектов проходят проверку знаний по промбезопасности?",
+        options: [
+          "Каждые 6 месяцев",
+          "Один раз в год",
+          "Не реже одного раза в 3 года",
+          "Один раз в 5 лет"
+        ]
+      },
+      {
+        question: "На какой срок выдается наряд-допуск на проведение огневых работ на взрывопожароопасных объектах?",
+        options: [
+          "На весь период строительно-монтажных работ",
+          "На одну дневную рабочую смену с ежедневным продлением при необходимости",
+          "На 1 месяц",
+          "Наряд-допуск оформляется бессрочно до завершения сварки"
+        ]
+      }
+    ];
+
+    let currentSpaIndex = 0;
+
+    function renderSpaQuestion(index) {
+      const container = document.getElementById("spaQuestionContainer");
+      const counter = document.getElementById("spaCounter");
+      const prevBtn = document.getElementById("prevSpaBtn");
+      const nextBtn = document.getElementById("nextSpaBtn");
+
+      const item = SPA_QUESTIONS[index];
+      counter.textContent = `Вопрос ${index + 1} из ${SPA_QUESTIONS.length}`;
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === SPA_QUESTIONS.length - 1;
+
+      // Clear and build new DOM elements to fire DOM mutation events
+      container.innerHTML = `
+        <div class="que dynamic-que" style="background: transparent; border: none; padding: 0;">
+          <div class="content">
+            <div class="formulation">
+              <div class="qtext" style="font-size: 15px; margin-bottom: 14px; color: #fff;">
+                <strong>SPA Вопрос ${index + 1}:</strong> ${item.question}
+              </div>
+              <div class="ablock">
+                <div class="answer" style="display: flex; flex-direction: column; gap: 8px;">
+                  ${item.options.map((opt, oIdx) => `
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #1e293b; border-radius: 6px; cursor: pointer;">
+                      <input type="radio" name="spa_q" id="spa_opt_${oIdx}">
+                      <label for="spa_opt_${oIdx}" style="color: #e2e8f0; font-size: 13px; cursor: pointer; flex: 1;">${opt}</label>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    document.getElementById("prevSpaBtn").addEventListener("click", () => {
+      if (currentSpaIndex > 0) {
+        currentSpaIndex--;
+        renderSpaQuestion(currentSpaIndex);
+      }
+    });
+
+    document.getElementById("nextSpaBtn").addEventListener("click", () => {
+      if (currentSpaIndex < SPA_QUESTIONS.length - 1) {
+        currentSpaIndex++;
+        renderSpaQuestion(currentSpaIndex);
+      }
+    });
+
+    // Initial render
+    renderSpaQuestion(0);
+  </script>
+</body>
+</html>

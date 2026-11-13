@@ -1,0 +1,43 @@
+/**
+ * Styles for Промбез и БИОТ РК — Помощник ИЦА
+ * Deliberately subtle, unobtrusive answer markers designed to avoid visual disruption.
+ */
+
+/* Base marker reset */
+.ica-th-answer {
+  transition: background-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* 1. Subtle style (DEFAULT): Very faint blue tint with subtle left-edge accent (tuned for Moodle #e7f3f5 cards too) */
+.ica-th-answer.ica-th-style-subtle {
+  background-color: rgba(37, 99, 235, 0.085) !important;
+  box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.45) !important;
+  border-radius: 3px;
+}
+
+/* 2. Ultra-subtle style: Microscopic left inset line + tiny 4px pale blue dot */
+.ica-th-answer.ica-th-style-ultra {
+  position: relative !important;
+  box-shadow: inset 1.5px 0 0 rgba(59, 130, 246, 0.20) !important;
+  border-radius: 2px;
+}
+
+.ica-th-answer.ica-th-style-ultra::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 6px !important;
+  right: 6px !important;
+  width: 4px !important;
+  height: 4px !important;
+  border-radius: 50% !important;
+  background-color: rgba(59, 130, 246, 0.28) !important;
+  pointer-events: none !important;
+  z-index: 9999 !important;
+}
+
+/* 3. Clear style: Slightly more discernible blue fill & left border */
+.ica-th-answer.ica-th-style-clear {
+  background-color: rgba(59, 130, 246, 0.13) !important;
+  box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.72) !important;
+  border-radius: 4px;
+}
