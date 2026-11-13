@@ -20,12 +20,24 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger("mind_testhelper")
-
 CURRENT_DIR = Path(__file__).resolve().parent
+LOG_FILE = CURRENT_DIR / "server.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger("mind_testhelper")
 BASE_DIR = CURRENT_DIR if (CURRENT_DIR / "data").exists() else CURRENT_DIR.parent
-STATIC_DIR = CURRENT_DIR / "static" if (CURRENT_DIR / "static").exists() else (BASE_DIR / "web" / "static" if (BASE_DIR / "web" / "static").exists() else CURRENT_DIR)
+if (CURRENT_DIR / "index.html").exists():
+    STATIC_DIR = CURRENT_DIR
+elif (BASE_DIR / "web" / "static").exists():
+    STATIC_DIR = BASE_DIR / "web" / "static"
+else:
+    STATIC_DIR = CURRENT_DIR
 ENV_FILE = BASE_DIR / ".env"
 
 # Load .env
@@ -385,6 +397,20 @@ async def serve_index():
     if index_file.exists():
         return FileResponse(index_file)
     return JSONResponse({"status": "ready", "message": "Index not found"})
+
+@app.get("/styles.css")
+async def serve_styles_css():
+    f = STATIC_DIR / "styles.css"
+    if not f.exists():
+        f = CURRENT_DIR / "styles.css"
+    return FileResponse(f, media_type="text/css")
+
+@app.get("/app.js")
+async def serve_app_js():
+    f = STATIC_DIR / "app.js"
+    if not f.exists():
+        f = CURRENT_DIR / "app.js"
+    return FileResponse(f, media_type="application/javascript")
 
 if __name__ == "__main__":
     logger.info(f"Starting Mind TestHelper Live Server on {HOST}:{PORT}")

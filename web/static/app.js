@@ -1,14 +1,16 @@
 /**
- * Mind TestHelper Live — Hands-Free Camera AI Scanner
- * Real-time video motion stabilization, HUD reticle tracking & instant solver.
+ * Mind TestHelper Live — High-Precision Photo AI Scanner with Optical & Digital Zoom
+ * Instant photo capture, hardware/software zoom, and high-accuracy test recognition.
  */
 
 (() => {
   'use strict';
 
-  // Elements
+  // DOM Elements
   const videoFeed = document.getElementById('videoFeed');
-  const motionCanvas = document.getElementById('motionCanvas');
+  const cameraFlash = document.getElementById('cameraFlash');
+  const snapshotPreview = document.getElementById('snapshotPreview');
+  const snapshotImg = document.getElementById('snapshotImg');
   const captureCanvas = document.getElementById('captureCanvas');
   const cameraFallback = document.getElementById('cameraFallback');
   const btnAllowCamera = document.getElementById('btnAllowCamera');
@@ -17,19 +19,33 @@
   const hudOverlay = document.getElementById('hudOverlay');
   const statusPill = document.getElementById('statusPill');
   const statusLabel = document.getElementById('statusLabel');
+  const btnSettings = document.getElementById('btnSettings');
   const btnTorch = document.getElementById('btnTorch');
   const btnFlipCamera = document.getElementById('btnFlipCamera');
   const btnMuteTTS = document.getElementById('btnMuteTTS');
 
-  const targetFrame = document.getElementById('targetFrame');
-  const stillnessBar = document.getElementById('stillnessBar');
-  const stabilityTag = document.getElementById('stabilityTag');
+  const frameGuide = document.getElementById('frameGuide');
+  const zoomControlsBar = document.getElementById('zoomControlsBar');
+  const btnZoomOut = document.getElementById('btnZoomOut');
+  const btnZoomIn = document.getElementById('btnZoomIn');
+  const zoomBadge = document.getElementById('zoomBadge');
+  const zoomPresetsGroup = document.getElementById('zoomPresetsGroup');
+  const pillZoom05 = document.getElementById('pillZoom05');
+  const pillZoom1 = document.getElementById('pillZoom1');
+  const pillZoom2 = document.getElementById('pillZoom2');
+  const pillZoom3 = document.getElementById('pillZoom3');
+  const pillZoom5 = document.getElementById('pillZoom5');
+
   const btnManualSnap = document.getElementById('btnManualSnap');
+  const shutterSpinner = document.getElementById('shutterSpinner');
+  const shutterLabel = document.getElementById('shutterLabel');
   const btnSamplePicker = document.getElementById('btnSamplePicker');
+  const inputFileUpload = document.getElementById('inputFileUpload');
 
   const answerDrawer = document.getElementById('answerDrawer');
   const drawerIdle = document.getElementById('drawerIdle');
   const drawerSolved = document.getElementById('drawerSolved');
+  const btnNewPhoto = document.getElementById('btnNewPhoto');
   const badgeSource = document.getElementById('badgeSource');
   const sourceLabel = document.getElementById('sourceLabel');
   const confidenceLabel = document.getElementById('confidenceLabel');
@@ -42,31 +58,51 @@
   const btnSpeakNow = document.getElementById('btnSpeakNow');
   const btnDismiss = document.getElementById('btnDismiss');
 
+  const settingsModal = document.getElementById('settingsModal');
+  const btnCloseSettings = document.getElementById('btnCloseSettings');
+  const inputBackendUrl = document.getElementById('inputBackendUrl');
+  const btnSetCloudflare = document.getElementById('btnSetCloudflare');
+  const btnSetLocal = document.getElementById('btnSetLocal');
+  const btnSaveBackend = document.getElementById('btnSaveBackend');
+  const settingsStatus = document.getElementById('settingsStatus');
+  const settingsStatusText = document.getElementById('settingsStatusText');
+
   const sampleModal = document.getElementById('sampleModal');
   const btnCloseModal = document.getElementById('btnCloseModal');
   const sampleGrid = document.getElementById('sampleGrid');
 
-  // State
+  // Backend URL configuration
+  const DEFAULT_REMOTE_BACKEND = 'https://dash-powell-driver-restructuring.trycloudflare.com';
+
+  function getApiBaseUrl() {
+    const custom = localStorage.getItem('mind_backend_url');
+    if (custom) return custom.replace(/\/+$/, '');
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return '';
+    }
+    return DEFAULT_REMOTE_BACKEND;
+  }
+
+  // Camera & Stream State
   let currentStream = null;
   let videoTrack = null;
   let isTorchOn = false;
   let useFacingMode = 'environment';
   let isAudioEnabled = true;
 
-  // Motion Detection & Stabilization
-  const MOTION_WIDTH = 160;
-  const MOTION_HEIGHT = 120;
-  let prevFrameData = null;
-  let stillnessStreak = 0;
-  const REQUIRED_STEADY_FRAMES = 7; // ~700ms at 100ms intervals
-  const MOTION_THRESHOLD = 0.045; // average delta threshold for stillness
+  // Zoom State
+  let currentZoom = 1.0;
+  let minZoom = 1.0;
+  let maxZoom = 5.0;
+  let hardwareZoomSupported = false;
+  let zoomStep = 0.25;
 
   let isAnalyzing = false;
-  let lastSolvedFingerprint = null;
-  let cooldownUntil = 0;
   let lastSolvedData = null;
 
-  // 1. Initialize Camera Stream
+  // =========================================================================
+  // 1. Camera Initialization & Stream Setup
+  // =========================================================================
   async function initCamera() {
     if (currentStream) {
       currentStream.getTracks().forEach(t => t.stop());
@@ -78,8 +114,8 @@
       audio: false,
       video: {
         facingMode: { ideal: useFacingMode },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 }
+        width: { ideal: 1920, min: 1280 },
+        height: { ideal: 1080, min: 720 }
       }
     };
 
@@ -87,14 +123,15 @@
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       attachStream(stream);
     } catch (err) {
-      console.warn('Ideal camera constraints failed, attempting fallback...', err);
+      console.warn('High-res camera constraints failed, attempting basic stream...', err);
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
         attachStream(stream);
       } catch (err2) {
         console.error('All camera access failed:', err2);
         cameraFallback.classList.remove('hidden');
-        cameraFallback.querySelector('p').textContent = 'Доступ к камере заблокирован. Вы можете использовать кнопку теста:';
+        const p = cameraFallback.querySelector('p');
+        if (p) p.textContent = 'Доступ к камере заблокирован. Разрешите доступ или выберите фото:';
       }
     }
   }
@@ -105,20 +142,418 @@
     videoTrack = stream.getVideoTracks()[0];
 
     videoFeed.onloadedmetadata = () => {
-      videoFeed.play().catch(e => console.warn(e));
+      videoFeed.play().catch(e => console.warn('Play error:', e));
       cameraFallback.classList.add('hidden');
-      setupMotionCanvas();
-      startStabilizationLoop();
+      inspectCapabilities();
+      setZoom(1.0, false);
+      setStatusReady();
     };
+  }
 
-    // Check torch capabilities
-    if (videoTrack && videoTrack.getCapabilities) {
-      const caps = videoTrack.getCapabilities();
-      if (caps.torch) {
-        btnTorch.style.display = 'flex';
+  function inspectCapabilities() {
+    if (!videoTrack || !videoTrack.getCapabilities) return;
+    const caps = videoTrack.getCapabilities();
+
+    // Check torch
+    if (caps.torch) {
+      btnTorch.style.display = 'flex';
+    } else {
+      btnTorch.style.display = 'none';
+    }
+
+    // Check hardware optical/digital zoom support
+    if (caps.zoom) {
+      hardwareZoomSupported = true;
+      minZoom = Math.max(0.5, caps.zoom.min || 1.0);
+      maxZoom = Math.min(10.0, caps.zoom.max || 5.0);
+      zoomStep = caps.zoom.step || 0.1;
+      if (minZoom < 0.9) {
+        pillZoom05.classList.remove('hidden');
       }
+    } else {
+      hardwareZoomSupported = false;
+      minZoom = 1.0;
+      maxZoom = 5.0;
+      zoomStep = 0.25;
     }
   }
+
+  // =========================================================================
+  // 2. Optical & Digital Zoom Engine
+  // =========================================================================
+  function setZoom(targetVal, smooth = true) {
+    const clamped = Math.max(minZoom, Math.min(maxZoom, targetVal));
+    currentZoom = Math.round(clamped * 10) / 10;
+
+    // Apply hardware zoom if supported by the camera device
+    if (hardwareZoomSupported && videoTrack) {
+      videoTrack.applyConstraints({
+        advanced: [{ zoom: currentZoom }]
+      }).catch(err => {
+        console.warn('Hardware zoom constraint ignored, using digital transform:', err);
+      });
+    }
+
+    // Always apply digital CSS transform for ultra-responsive live feedback
+    if (currentZoom > 1.005) {
+      videoFeed.style.transform = `scale(${currentZoom})`;
+    } else {
+      videoFeed.style.transform = 'none';
+    }
+
+    // Update UI badge & active preset button
+    zoomBadge.textContent = `${currentZoom.toFixed(1)}×`;
+    updatePresetPills(currentZoom);
+  }
+
+  function adjustZoom(delta) {
+    setZoom(currentZoom + delta);
+  }
+
+  function updatePresetPills(val) {
+    const pills = zoomPresetsGroup.querySelectorAll('.zoom-preset-pill');
+    pills.forEach(pill => {
+      const z = parseFloat(pill.getAttribute('data-zoom'));
+      const isMatch = Math.abs(z - val) < 0.25;
+      pill.classList.toggle('active', isMatch);
+    });
+  }
+
+  // Preset buttons click
+  zoomPresetsGroup.addEventListener('click', (e) => {
+    const pill = e.target.closest('.zoom-preset-pill');
+    if (!pill) return;
+    const targetZoom = parseFloat(pill.getAttribute('data-zoom'));
+    if (!isNaN(targetZoom)) {
+      setZoom(targetZoom);
+      vibrate(20);
+    }
+  });
+
+  btnZoomOut.addEventListener('click', () => {
+    adjustZoom(-0.5);
+    vibrate(15);
+  });
+
+  btnZoomIn.addEventListener('click', () => {
+    adjustZoom(0.5);
+    vibrate(15);
+  });
+
+  // Pinch-to-zoom gesture on camera container
+  let initialPinchDist = null;
+  let zoomAtPinchStart = 1.0;
+
+  const cameraContainer = document.getElementById('cameraContainer');
+
+  cameraContainer.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      initialPinchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      zoomAtPinchStart = currentZoom;
+    }
+  }, { passive: true });
+
+  cameraContainer.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && initialPinchDist) {
+      const currentDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (initialPinchDist > 10) {
+        const factor = currentDist / initialPinchDist;
+        setZoom(zoomAtPinchStart * factor, false);
+      }
+    }
+  }, { passive: true });
+
+  cameraContainer.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      initialPinchDist = null;
+    }
+  });
+
+  // Mouse wheel zoom on desktop
+  cameraContainer.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.3 : -0.3;
+    adjustZoom(delta);
+  }, { passive: false });
+
+  // Double tap to toggle zoom 1x <-> 2x
+  let lastTapTime = 0;
+  cameraContainer.addEventListener('click', (e) => {
+    // Avoid clicking on buttons inside
+    if (e.target.closest('button') || e.target.closest('label')) return;
+    const now = Date.now();
+    if (now - lastTapTime < 300) {
+      setZoom(currentZoom > 1.4 ? 1.0 : 2.0);
+      vibrate(25);
+    }
+    lastTapTime = now;
+  });
+
+  // =========================================================================
+  // 3. High-Quality Photo Capture & Image Enhancement
+  // =========================================================================
+  function captureHighQualityPhoto() {
+    if (!videoFeed.videoWidth || !videoFeed.videoHeight) {
+      return null;
+    }
+
+    const vw = videoFeed.videoWidth;
+    const vh = videoFeed.videoHeight;
+
+    // If digital zoom is applied (and not solely handled by hardware optical lens),
+    // crop accurately from the centered zoom region so the resulting photo is magnified in high detail!
+    let srcX = 0;
+    let srcY = 0;
+    let srcW = vw;
+    let srcH = vh;
+
+    if (!hardwareZoomSupported && currentZoom > 1.01) {
+      srcW = vw / currentZoom;
+      srcH = vh / currentZoom;
+      srcX = (vw - srcW) / 2;
+      srcY = (vh - srcH) / 2;
+    }
+
+    // Set canvas dimensions to preserve sharp text resolution (up to 1920px max dimension)
+    const targetWidth = Math.min(1920, Math.round(srcW));
+    const targetHeight = Math.round(srcH * (targetWidth / srcW));
+
+    captureCanvas.width = targetWidth;
+    captureCanvas.height = targetHeight;
+
+    const ctx = captureCanvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Draw magnified image onto high-resolution canvas
+    ctx.drawImage(
+      videoFeed,
+      srcX, srcY, srcW, srcH,
+      0, 0, targetWidth, targetHeight
+    );
+
+    // Return high-quality JPEG
+    return captureCanvas.toDataURL('image/jpeg', 0.94);
+  }
+
+  // Haptic feedback helper
+  function vibrate(ms = 30) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(ms); } catch (e) {}
+    }
+  }
+
+  // Camera shutter sound & flash effect
+  function triggerShutterEffects(dataUrl) {
+    // 1. Screen flash
+    cameraFlash.classList.add('flash-active');
+    setTimeout(() => {
+      cameraFlash.classList.remove('flash-active');
+    }, 120);
+
+    // 2. Haptic vibration
+    vibrate([40, 30, 40]);
+
+    // 3. Audio camera click synthesis
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx && isAudioEnabled) {
+        const audioCtx = new AudioCtx();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(850, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(140, audioCtx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.28, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.07);
+      }
+    } catch (e) {}
+
+    // 4. Snapshot thumbnail preview
+    if (dataUrl) {
+      snapshotImg.src = dataUrl;
+      snapshotPreview.classList.remove('hidden');
+    }
+  }
+
+  // =========================================================================
+  // 4. Photo Shooting & Solve Pipeline
+  // =========================================================================
+  async function takePhotoAndSolve() {
+    if (isAnalyzing) return;
+
+    const imageData = captureHighQualityPhoto();
+    if (!imageData) {
+      alert('Камера ещё не готова. Подождите секунду и повторите.');
+      return;
+    }
+
+    triggerShutterEffects(imageData);
+    await solveImage(imageData);
+  }
+
+  async function solveImage(imageData) {
+    isAnalyzing = true;
+    btnManualSnap.classList.add('solving');
+    shutterSpinner.classList.remove('hidden');
+    shutterLabel.textContent = 'РАСПОЗНАВАНИЕ...';
+    statusPill.className = 'status-pill solving';
+    statusLabel.textContent = 'АНАЛИЗ ФОТО...';
+    frameGuide.classList.add('solving');
+
+    try {
+      const endpoint = `${getApiBaseUrl()}/api/solve`;
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData })
+      });
+
+      const res = await resp.json();
+      handleSolveResponse(res);
+    } catch (err) {
+      console.error('Solve request error:', err);
+      statusPill.className = 'status-pill';
+      statusLabel.textContent = 'ОШИБКА СВЯЗИ';
+      setTimeout(setStatusReady, 2500);
+    } finally {
+      isAnalyzing = false;
+      btnManualSnap.classList.remove('solving');
+      shutterSpinner.classList.add('hidden');
+      shutterLabel.textContent = 'СНЯТЬ ФОТО';
+      frameGuide.classList.remove('solving');
+    }
+  }
+
+  function setStatusReady() {
+    statusPill.className = 'status-pill';
+    statusLabel.textContent = 'ГОТОВ К ФОТО';
+  }
+
+  function handleSolveResponse(res) {
+    if (!res || !res.found) {
+      statusPill.className = 'status-pill';
+      statusLabel.textContent = 'ВОПРОС НЕ НАЙДЕН';
+      setTimeout(setStatusReady, 2500);
+      return;
+    }
+
+    lastSolvedData = res;
+    statusPill.className = 'status-pill solved';
+    statusLabel.textContent = `ОТВЕТ НАЙДЕН (${res.latency_ms || 800}мс)`;
+    vibrate([60, 40, 80]);
+
+    renderAnswer(res);
+
+    if (isAudioEnabled && res.correct_answer) {
+      speakAnswer(res.correct_answer);
+    }
+  }
+
+  function renderAnswer(res) {
+    drawerIdle.classList.add('hidden');
+    drawerSolved.classList.remove('hidden');
+
+    if (res.bank_match && res.bank_match.verified) {
+      badgeSource.className = 'badge-source verified';
+      sourceLabel.textContent = '✓ БАЗА ИЦА (100% ВЕРНО)';
+    } else {
+      badgeSource.className = 'badge-source';
+      sourceLabel.textContent = `⚡ ${res.model_used || 'Gemini 3.1 Vision'}`;
+    }
+
+    confidenceLabel.textContent = `${Math.round((res.confidence || 0.98) * 100)}% точность`;
+    latencyPill.textContent = `${res.latency_ms || 780}ms`;
+
+    correctAnswerText.textContent = res.correct_answer || 'Ответ определён';
+    questionText.textContent = res.question || '—';
+
+    optionsList.innerHTML = '';
+    const options = res.options || [];
+
+    if (options.length > 0) {
+      options.forEach((opt, idx) => {
+        const pill = document.createElement('div');
+        const isCorrect = (idx === res.correct_index) ||
+                          (res.correct_answer && opt.toLowerCase().includes(res.correct_answer.toLowerCase())) ||
+                          (res.correct_answer && res.correct_answer.toLowerCase().includes(opt.toLowerCase()));
+
+        pill.className = `option-pill ${isCorrect ? 'correct' : ''}`;
+        pill.innerHTML = `
+          <div class="option-check">${isCorrect ? '✓' : ''}</div>
+          <span>${opt}</span>
+        `;
+        optionsList.appendChild(pill);
+      });
+      optionsList.style.display = 'flex';
+    } else {
+      optionsList.style.display = 'none';
+    }
+
+    let exp = res.explanation || '';
+    if (res.bank_match && res.bank_match.npa_ref) {
+      exp += `\n\nНПА: ${res.bank_match.npa_ref}`;
+    }
+    explanationText.textContent = exp || 'Ответ подтверждён нормативными источниками и моделью.';
+
+    answerDrawer.scrollTop = 0;
+  }
+
+  // =========================================================================
+  // 5. Actions & UI Handlers
+  // =========================================================================
+  // Primary Shutter Button Click
+  btnManualSnap.addEventListener('click', takePhotoAndSolve);
+
+  // Keyboard shortcut: Spacebar or Enter to snap photo on desktop
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !e.target.closest('input, textarea')) {
+      e.preventDefault();
+      takePhotoAndSolve();
+    }
+  });
+
+  // Take next question button in answer drawer
+  btnNewPhoto.addEventListener('click', () => {
+    drawerSolved.classList.add('hidden');
+    drawerIdle.classList.remove('hidden');
+    snapshotPreview.classList.add('hidden');
+    lastSolvedData = null;
+    setStatusReady();
+    vibrate(20);
+  });
+
+  btnDismiss.addEventListener('click', () => {
+    drawerSolved.classList.add('hidden');
+    drawerIdle.classList.remove('hidden');
+    snapshotPreview.classList.add('hidden');
+    lastSolvedData = null;
+    setStatusReady();
+  });
+
+  // File Picker Upload
+  inputFileUpload.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target.result;
+      triggerShutterEffects(dataUrl);
+      solveImage(dataUrl);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
 
   // Torch Toggle
   btnTorch.addEventListener('click', async () => {
@@ -144,250 +579,10 @@
     btnMuteTTS.classList.toggle('active', isAudioEnabled);
   });
 
-  // 2. Motion Stabilization Engine
-  function setupMotionCanvas() {
-    motionCanvas.width = MOTION_WIDTH;
-    motionCanvas.height = MOTION_HEIGHT;
-  }
-
-  function startStabilizationLoop() {
-    const motionCtx = motionCanvas.getContext('2d', { willReadFrequently: true });
-
-    setInterval(() => {
-      if (videoFeed.readyState < 2 || isAnalyzing) return;
-
-      // Draw downsampled frame
-      motionCtx.drawImage(videoFeed, 0, 0, MOTION_WIDTH, MOTION_HEIGHT);
-      const frame = motionCtx.getImageData(0, 0, MOTION_WIDTH, MOTION_HEIGHT);
-      const data = frame.data;
-
-      if (!prevFrameData) {
-        prevFrameData = new Uint8ClampedArray(data);
-        return;
-      }
-
-      // Calculate mean luminance difference
-      let totalDiff = 0;
-      const pixelCount = MOTION_WIDTH * MOTION_HEIGHT;
-
-      for (let i = 0; i < data.length; i += 4) {
-        // Luminance formula Y = 0.299R + 0.587G + 0.114B
-        const y1 = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-        const y0 = (prevFrameData[i] * 0.299 + prevFrameData[i + 1] * 0.587 + prevFrameData[i + 2] * 0.114);
-        totalDiff += Math.abs(y1 - y0);
-      }
-
-      // Copy for next tick
-      prevFrameData.set(data);
-
-      const motionScore = totalDiff / (pixelCount * 255);
-      handleMotionScore(motionScore);
-    }, 100);
-  }
-
-  function handleMotionScore(score) {
-    const now = Date.now();
-
-    if (score < MOTION_THRESHOLD) {
-      // Camera is steady
-      stillnessStreak++;
-      const progress = Math.min(100, Math.round((stillnessStreak / REQUIRED_STEADY_FRAMES) * 100));
-      stillnessBar.style.width = `${progress}%`;
-
-      if (stillnessStreak >= 2) {
-        statusPill.className = 'status-pill steady';
-        statusLabel.textContent = `ФИКСАЦИЯ (${progress}%)`;
-        stabilityTag.textContent = 'КАДР СТАБИЛЕН';
-        targetFrame.classList.add('locked');
-      }
-
-      if (stillnessStreak >= REQUIRED_STEADY_FRAMES) {
-        // Lock achieved!
-        if (now > cooldownUntil && !isAnalyzing) {
-          triggerCaptureAndSolve(false);
-        }
-      }
-    } else {
-      // Camera moved
-      if (stillnessStreak > 0) {
-        stillnessStreak = 0;
-        stillnessBar.style.width = '0%';
-        targetFrame.classList.remove('locked');
-
-        if (!isAnalyzing) {
-          statusPill.className = 'status-pill';
-          statusLabel.textContent = 'ПОИСК ВОПРОСА';
-          stabilityTag.textContent = 'ДЕРЖИТЕ НЕПОДВИЖНО';
-        }
-      }
-    }
-  }
-
-  // 3. High-Res Image Capture & Reticle Crop
-  function captureReticleImage() {
-    if (!videoFeed.videoWidth || !videoFeed.videoHeight) return null;
-
-    const vw = videoFeed.videoWidth;
-    const vh = videoFeed.videoHeight;
-
-    // Get reticle bounding rect relative to viewport
-    const retRect = targetFrame.getBoundingClientRect();
-    const vpRect = document.body.getBoundingClientRect();
-
-    // Map screen coordinates to video natural aspect
-    const scaleX = vw / vpRect.width;
-    const scaleY = vh / vpRect.height;
-
-    // Crop box with a bit of safety margin
-    const margin = 0.08;
-    let cropX = Math.max(0, (retRect.left - retRect.width * margin) * scaleX);
-    let cropY = Math.max(0, (retRect.top - retRect.height * margin) * scaleY);
-    let cropW = Math.min(vw - cropX, retRect.width * (1 + margin * 2) * scaleX);
-    let cropH = Math.min(vh - cropY, retRect.height * (1 + margin * 2) * scaleY);
-
-    captureCanvas.width = Math.min(1280, Math.round(cropW));
-    captureCanvas.height = Math.round(cropH * (captureCanvas.width / cropW));
-
-    const ctx = captureCanvas.getContext('2d');
-    ctx.drawImage(videoFeed, cropX, cropY, cropW, cropH, 0, 0, captureCanvas.width, captureCanvas.height);
-
-    return captureCanvas.toDataURL('image/jpeg', 0.88);
-  }
-
-  // 4. Trigger Solve API
-  async function triggerCaptureAndSolve(isManual = false) {
-    if (isAnalyzing) return;
-
-    const imageData = captureReticleImage();
-    if (!imageData) return;
-
-    // Simple fingerprint to prevent re-requesting exact identical view
-    const fp = imageData.slice(100, 300);
-    if (!isManual && fp === lastSolvedFingerprint) {
-      return;
-    }
-
-    isAnalyzing = true;
-    lastSolvedFingerprint = fp;
-    cooldownUntil = Date.now() + 4500; // 4.5s cooldown for next auto-trigger
-
-    // Update HUD to Solving State
-    statusPill.className = 'status-pill solving';
-    statusLabel.textContent = 'РАСПОЗНАВАНИЕ...';
-    targetFrame.classList.add('solving');
-
-    try {
-      const resp = await fetch('/api/solve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageData })
-      });
-
-      const res = await resp.json();
-      handleSolveResponse(res);
-    } catch (err) {
-      console.error('Solve request error:', err);
-      statusPill.className = 'status-pill';
-      statusLabel.textContent = 'ОШИБКА СЕТИ';
-      setTimeout(() => {
-        statusLabel.textContent = 'ПОИСК ВОПРОСА';
-      }, 2000);
-    } finally {
-      isAnalyzing = false;
-      targetFrame.classList.remove('solving');
-    }
-  }
-
-  function handleSolveResponse(res) {
-    if (!res || !res.found) {
-      statusPill.className = 'status-pill';
-      statusLabel.textContent = 'ВОПРОС НЕ НАЙДЕН';
-      setTimeout(() => {
-        statusLabel.textContent = 'ПОИСК ВОПРОСА';
-      }, 2200);
-      return;
-    }
-
-    // Success!
-    lastSolvedData = res;
-    statusPill.className = 'status-pill solved';
-    statusLabel.textContent = 'ОТВЕТ НАЙДЕН';
-
-    // Haptic pulse on phone
-    if (navigator.vibrate) {
-      navigator.vibrate([40, 60, 40]);
-    }
-
-    renderAnswer(res);
-
-    // Audio readout
-    if (isAudioEnabled && res.correct_answer) {
-      speakAnswer(res.correct_answer);
-    }
-  }
-
-  function renderAnswer(res) {
-    drawerIdle.classList.add('hidden');
-    drawerSolved.classList.remove('hidden');
-
-    // Source & verified badge
-    if (res.bank_match && res.bank_match.verified) {
-      badgeSource.className = 'badge-source verified';
-      sourceLabel.textContent = '✓ БАЗА ИЦА (100% СОВПАДЕНИЕ)';
-    } else {
-      badgeSource.className = 'badge-source';
-      sourceLabel.textContent = `⚡ ${res.model_used || 'Gemini Vision'}`;
-    }
-
-    confidenceLabel.textContent = `${Math.round((res.confidence || 0.98) * 100)}% уверенность`;
-    latencyPill.textContent = `${res.latency_ms || 780}ms`;
-
-    // Winning Answer
-    correctAnswerText.textContent = res.correct_answer || 'Ответ определён';
-
-    // Question
-    questionText.textContent = res.question || '—';
-
-    // Options list
-    optionsList.innerHTML = '';
-    const options = res.options || [];
-
-    if (options.length > 0) {
-      options.forEach((opt, idx) => {
-        const pill = document.createElement('div');
-        const isCorrect = (idx === res.correct_index) ||
-                          (res.correct_answer && opt.toLowerCase().includes(res.correct_answer.toLowerCase())) ||
-                          (res.correct_answer && res.correct_answer.toLowerCase().includes(opt.toLowerCase()));
-
-        pill.className = `option-pill ${isCorrect ? 'correct' : ''}`;
-        pill.innerHTML = `
-          <div class="option-check">${isCorrect ? '✓' : ''}</div>
-          <span>${opt}</span>
-        `;
-        optionsList.appendChild(pill);
-      });
-      optionsList.style.display = 'flex';
-    } else {
-      optionsList.style.display = 'none';
-    }
-
-    // Explanation & Legal NPA Ref
-    let exp = res.explanation || '';
-    if (res.bank_match && res.bank_match.npa_ref) {
-      exp += `\n\nНПА: ${res.bank_match.npa_ref}`;
-    }
-    explanationText.textContent = exp || 'Ответ подтверждён нормативными источниками и моделью.';
-
-    // Scroll drawer into view smoothly
-    answerDrawer.scrollTop = 0;
-  }
-
-  // Text-To-Speech
   function speakAnswer(text) {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
-    // Clean prefix like "B) " for natural speech
     const cleanText = text.replace(/^[A-Da-d0-9\)\.\-–—\s]+/, '').trim() || text;
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'ru-RU';
@@ -395,7 +590,6 @@
     window.speechSynthesis.speak(utterance);
   }
 
-  // Actions
   btnCopyAnswer.addEventListener('click', () => {
     if (!lastSolvedData) return;
     const textToCopy = `Вопрос: ${lastSolvedData.question}\nОтвет: ${lastSolvedData.correct_answer}\n${lastSolvedData.explanation || ''}`;
@@ -413,23 +607,11 @@
     }
   });
 
-  btnDismiss.addEventListener('click', () => {
-    drawerSolved.classList.add('hidden');
-    drawerIdle.classList.remove('hidden');
-    lastSolvedData = null;
-    statusPill.className = 'status-pill';
-    statusLabel.textContent = 'ПОИСК ВОПРОСА';
-    stillnessStreak = 0;
-    stillnessBar.style.width = '0%';
-  });
-
-  btnManualSnap.addEventListener('click', () => {
-    triggerCaptureAndSolve(true);
-  });
-
   btnAllowCamera.addEventListener('click', initCamera);
 
-  // 5. Sample Questions Modal (Dynamic from API + Fallback)
+  // =========================================================================
+  // 6. Sample Questions Modal & Synthesized Tickets
+  // =========================================================================
   let liveSamples = [
     {
       category: "Промышленная безопасность РК (ИЦА)",
@@ -453,21 +635,21 @@
       ]
     },
     {
-      category: "English Technical / General Exam",
-      title: "Networking & Cloud",
-      question: "Which OSI model layer is responsible for end-to-end communication, reliability, and flow control?",
+      category: "Электробезопасность и ПТЭ/ПУЭ",
+      title: "Категории электроприемников",
+      question: "Каким источником питания должны обеспечиваться электроприемники первой категории особой группы?",
       options: [
-        "A) Data Link Layer",
-        "B) Network Layer",
-        "C) Transport Layer",
-        "D) Session Layer"
+        "A) Двумя независимыми источниками питания",
+        "B) Дополнительным третьим независимым источником питания",
+        "C) Одним надежным источником напряжением 220В",
+        "D) Аккумуляторной батареей на 1 час"
       ]
     }
   ];
 
   async function loadBankSamples() {
     try {
-      const resp = await fetch('/api/samples');
+      const resp = await fetch(`${getApiBaseUrl()}/api/samples`);
       const data = await resp.json();
       if (Array.isArray(data) && data.length > 0) {
         liveSamples = data.map((item, idx) => ({
@@ -485,7 +667,7 @@
 
   function renderSamples() {
     sampleGrid.innerHTML = '';
-    liveSamples.forEach((s, idx) => {
+    liveSamples.forEach((s) => {
       const card = document.createElement('div');
       card.className = 'sample-card';
       card.innerHTML = `
@@ -501,70 +683,67 @@
   }
 
   function synthesizeAndSolveSample(sample) {
-    // Draw synthetic test ticket on canvas
+    cameraFallback.classList.add('hidden');
     const cvs = captureCanvas;
-    cvs.width = 700;
-    cvs.height = 360;
+    cvs.width = 1000;
+    cvs.height = 700;
     const ctx = cvs.getContext('2d');
 
-    // Clean white exam sheet background
+    // Crisp high-contrast paper card
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, cvs.width, cvs.height);
 
     ctx.fillStyle = '#111827';
-    ctx.font = 'bold 20px -apple-system, sans-serif';
-    ctx.fillText('БИЛЕТ ПРОВЕРКИ ЗНАНИЙ', 30, 45);
+    ctx.font = 'bold 22px Arial, sans-serif';
+    ctx.fillText('ЭКЗАМЕНАЦИОННЫЙ БИЛЕТ ПРОВЕРКИ ЗНАНИЙ', 40, 50);
 
-    ctx.font = '16px -apple-system, sans-serif';
-    ctx.fillStyle = '#1F2937';
+    ctx.font = 'bold 20px Arial, sans-serif';
+    ctx.fillStyle = '#111827';
 
     // Wrap question text
     const words = sample.question.split(' ');
     let line = '';
-    let y = 85;
+    let y = 100;
     for (const w of words) {
       const testLine = line + w + ' ';
-      if (ctx.measureText(testLine).width > 640) {
-        ctx.fillText(line, 30, y);
+      if (ctx.measureText(testLine).width > 900) {
+        ctx.fillText(line, 40, y);
         line = w + ' ';
-        y += 24;
+        y += 30;
       } else {
         line = testLine;
       }
     }
-    ctx.fillText(line, 30, y);
-    y += 35;
+    ctx.fillText(line, 40, y);
+    y += 45;
 
-    // Options
-    ctx.font = '15px -apple-system, sans-serif';
-    sample.options.forEach(opt => {
-      ctx.fillStyle = '#374151';
-      ctx.fillText(opt, 30, y);
-      y += 28;
+    // Wrap option items with clear lettering
+    ctx.font = '19px Arial, sans-serif';
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    sample.options.forEach((opt, idx) => {
+      ctx.fillStyle = '#1F2937';
+      const prefix = /^[A-Za-z0-9\)\.\-]/.test(opt.trim()) ? '' : `${letters[idx] || (idx + 1)}) `;
+      const fullOpt = prefix + opt;
+
+      const optWords = fullOpt.split(' ');
+      let optLine = '';
+      for (const ow of optWords) {
+        const testOpt = optLine + ow + ' ';
+        if (ctx.measureText(testOpt).width > 900) {
+          ctx.fillText(optLine, 40, y);
+          optLine = '   ' + ow + ' ';
+          y += 28;
+        } else {
+          optLine = testOpt;
+        }
+      }
+      ctx.fillText(optLine, 40, y);
+      y += 38;
     });
 
-    const imgData = cvs.toDataURL('image/jpeg', 0.9);
-
-    // Trigger solve directly
-    isAnalyzing = true;
-    statusPill.className = 'status-pill solving';
-    statusLabel.textContent = 'РАСПОЗНАВАНИЕ...';
-
-    fetch('/api/solve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: imgData })
-    })
-      .then(r => r.json())
-      .then(res => handleSolveResponse(res))
-      .catch(e => {
-        console.error(e);
-        statusPill.className = 'status-pill';
-        statusLabel.textContent = 'ОШИБКА';
-      })
-      .finally(() => {
-        isAnalyzing = false;
-      });
+    const imgData = cvs.toDataURL('image/jpeg', 0.95);
+    triggerShutterEffects(imgData);
+    solveImage(imgData);
   }
 
   btnSamplePicker.addEventListener('click', () => {
@@ -582,6 +761,59 @@
     sampleModal.classList.add('hidden');
   });
 
-  // Start
+  // =========================================================================
+  // 7. Settings Modal
+  // =========================================================================
+  async function testBackendHealth(url) {
+    settingsStatus.className = 'settings-status';
+    settingsStatusText.textContent = 'Проверка соединения...';
+    try {
+      const resp = await fetch(`${url}/api/status`, { signal: AbortSignal.timeout(4000) });
+      const data = await resp.json();
+      if (data && data.status === 'online') {
+        settingsStatus.className = 'settings-status online';
+        settingsStatusText.textContent = `Онлайн: ${data.question_bank_size || 0} вопросов в базе (${data.primary_model || 'Gemini'})`;
+        return true;
+      }
+    } catch (e) {
+      settingsStatus.className = 'settings-status offline';
+      settingsStatusText.textContent = 'Недоступен (проверьте URL)';
+    }
+    return false;
+  }
+
+  btnSettings.addEventListener('click', () => {
+    inputBackendUrl.value = getApiBaseUrl();
+    settingsModal.classList.remove('hidden');
+    testBackendHealth(inputBackendUrl.value);
+  });
+
+  btnCloseSettings.addEventListener('click', () => {
+    settingsModal.classList.add('hidden');
+  });
+
+  btnSetCloudflare.addEventListener('click', () => {
+    inputBackendUrl.value = DEFAULT_REMOTE_BACKEND;
+    testBackendHealth(inputBackendUrl.value);
+  });
+
+  btnSetLocal.addEventListener('click', () => {
+    inputBackendUrl.value = 'http://localhost:8000';
+    testBackendHealth(inputBackendUrl.value);
+  });
+
+  btnSaveBackend.addEventListener('click', async () => {
+    const val = inputBackendUrl.value.trim().replace(/\/+$/, '');
+    localStorage.setItem('mind_backend_url', val);
+    const ok = await testBackendHealth(val);
+    if (ok) {
+      setTimeout(() => {
+        settingsModal.classList.add('hidden');
+      }, 600);
+      loadBankSamples();
+    }
+  });
+
+  // Start Camera
   initCamera();
 })();
