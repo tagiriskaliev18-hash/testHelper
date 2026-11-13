@@ -1,5 +1,6 @@
 import base64
 import difflib
+import io
 import json
 import logging
 import os
@@ -10,6 +11,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from PIL import Image, ImageEnhance, ImageOps
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -42,9 +44,10 @@ HOST = os.environ.get("HOST") or env_vars.get("HOST", "0.0.0.0")
 # High-speed vision models in priority order
 VISION_MODELS = [
     "gemini-3.1-flash-lite",
-    "gemini-3.8-flash",
-    "gemini-3.5-flash",
-    "gemini-flash-latest"
+    "gemini-3.1-flash-lite-preview",
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3-flash-preview"
 ]
 
 # In-memory question bank for instant 100% corporate/ICA answers
@@ -204,33 +207,58 @@ async def get_samples():
                 break
     return samples
 
-SYSTEM_PROMPT = """You are a high-speed AI exam and test solver (supporting Russian and English).
-Analyze the provided camera frame carefully.
+SYSTEM_PROMPT = """You are a world-class AI exam and test solver (specializing in Russian and English tests, exams, and official certifications).
+Analyze the provided camera photograph of a question ticket, paper document, or screen.
 
 Tasks:
-1. Detect if there is a legible multiple-choice or open test question in the image.
-   If the image is completely empty, blurry, unreadable, or does not contain a question, respond with:
+1. Examine the image carefully. Even if the photo is taken at a slight angle or shows part of a sheet, find and transcribe the question and its options.
+   Only if the image is completely blank, solid black, completely blurred beyond recognition, or contains absolutely no test question or readable text, respond with:
    {"found": false, "reason": "Наведите камеру на текст вопроса"}
 
-2. If a question is visible:
-   - "question": full transcribed question text (clean up typos from perspective, preserve math/special terms).
-   - "options": list of all option strings present in the image (e.g. ["A) Марс", "B) Земля", ...]). If it is an open question without options, return an empty array [].
-   - "correct_answer": the exact winning answer text.
-   - "correct_index": 0-based integer index of the correct option in "options" (or -1 if open question).
-   - "explanation": a concise (1-2 sentences) direct explanation proving why this answer is correct according to official science, law, or standards.
-   - "confidence": confidence float between 0.80 and 1.0.
+2. If a test question is found:
+   - "question": full transcribed question text (clean up minor OCR noise/perspective artifacts, accurately preserve formulas, numbers, terms, and punctuation).
+   - "options": array of all option strings visible in the image (e.g. ["A) ...", "B) ...", ...]). If it is an open question without options, return [].
+   - "correct_answer": the exact winning answer string. If options are present, provide the exact matching option text (including letter/number prefix if present).
+   - "correct_index": 0-based integer index of the correct option in "options" (-1 if open question).
+   - "explanation": a concise (1-2 sentences) direct explanation proving why this answer is correct according to official laws, technical safety rules (ПБ/БИОТ/ТК/ПУЭ), or scientific standards.
+   - "confidence": confidence float between 0.85 and 1.0.
    - "language": "ru" or "en".
 
 Strictly output valid JSON matching this schema."""
+
+def enhance_image_for_recognition(b64_image: str) -> str:
+    """Preprocess and enhance image contrast & sharpness for optimal vision OCR."""
+    try:
+        raw_b64 = b64_image.split(",", 1)[1] if "," in b64_image else b64_image
+        raw_bytes = base64.b64decode(raw_b64)
+        im = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+        w, h = im.size
+
+        # Keep high resolution for reading fine printed text, capped at 1920px max dimension
+        max_dim = 1920
+        if max(w, h) > max_dim:
+            im.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+
+        # Autocontrast to eliminate greyish cast or phone screen glare
+        im = ImageOps.autocontrast(im, cutoff=0.5)
+
+        # Gentle unsharp mask / sharpness boost for crisp font edges
+        enhancer = ImageEnhance.Sharpness(im)
+        im = enhancer.enhance(1.22)
+
+        out_buf = io.BytesIO()
+        im.save(out_buf, format="JPEG", quality=94)
+        return base64.b64encode(out_buf.getvalue()).decode("utf-8")
+    except Exception as e:
+        logger.warning(f"Image enhancement fallback to original: {e}")
+        return b64_image.split(",", 1)[1] if "," in b64_image else b64_image
 
 def call_gemini_vision(b64_image: str) -> Dict[str, Any]:
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY is not configured in backend")
 
-    if "," in b64_image:
-        b64_data = b64_image.split(",", 1)[1]
-    else:
-        b64_data = b64_image
+    # Preprocess image for crisp OCR
+    b64_data = enhance_image_for_recognition(b64_image)
 
     payload = {
         "contents": [{
@@ -261,14 +289,20 @@ def call_gemini_vision(b64_image: str) -> Dict[str, Any]:
             headers={"Content-Type": "application/json"}
         )
         try:
-            with urllib.request.urlopen(req, timeout=8) as resp:
+            with urllib.request.urlopen(req, timeout=12) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 candidates = data.get("candidates", [])
                 if not candidates:
                     continue
                 part_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                 if part_text:
-                    parsed = json.loads(part_text)
+                    cleaned_text = re.sub(r"^```(?:json)?\s*", "", part_text.strip(), flags=re.MULTILINE)
+                    cleaned_text = re.sub(r"\s*```$", "", cleaned_text.strip(), flags=re.MULTILINE)
+                    parsed = json.loads(cleaned_text)
+                    if isinstance(parsed, list):
+                        parsed = parsed[0] if parsed and isinstance(parsed[0], dict) else {}
+                    if not isinstance(parsed, dict):
+                        parsed = {"found": False, "reason": "Не удалось разобрать ответ модели"}
                     parsed["model_used"] = model_name
                     return parsed
         except urllib.error.HTTPError as e:
@@ -354,4 +388,12 @@ async def serve_index():
 
 if __name__ == "__main__":
     logger.info(f"Starting Mind TestHelper Live Server on {HOST}:{PORT}")
-    uvicorn.run(app, host=HOST, port=PORT, log_level="info")
+    while True:
+        try:
+            uvicorn.run(app, host=HOST, port=PORT, log_level="info")
+        except (KeyboardInterrupt, SystemExit):
+            logger.info("Server stopped by user.")
+            break
+        except Exception as e:
+            logger.error(f"Uvicorn error: {e}. Restarting in 2s...")
+            time.sleep(2)

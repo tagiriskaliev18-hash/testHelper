@@ -123,7 +123,15 @@ export default async function handler(req, res) {
       const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!rawText) continue;
 
-      const parsed = JSON.parse(rawText);
+      let cleanText = rawText.trim();
+      cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+      let parsed = JSON.parse(cleanText);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsed = parsed[0];
+      }
+      if (!parsed || typeof parsed !== 'object') {
+        parsed = { found: false, reason: 'Не удалось разобрать ответ' };
+      }
       if (!parsed.found) {
         return res.status(200).json({
           status: 'not_found',
